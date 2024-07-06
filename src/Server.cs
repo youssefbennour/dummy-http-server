@@ -14,9 +14,18 @@ var path = request.Split("\r\n")
     .FirstOrDefault()?
     .Split(" ")[1];
 
-var response = path is "/" 
-    ? "HTTP/1.1 200 OK\r\n\r\n" 
-    : "HTTP/1.1 404 Not Found\r\n\r\n";
+var parameter = path?.Split("/")
+    .LastOrDefault();
+
+var parameterLengthInBytes = Encoding.ASCII.GetBytes(parameter ?? String.Empty).Length;
+
+var response = path switch
+{
+   "/" =>  "HTTP/1.1 200 OK\r\n\r\n",
+   var echo when echo is not null && echo.StartsWith("/echo") => 
+        $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {parameterLengthInBytes}\r\n\r\n{parameter}",
+   _ =>  "HTTP/1.1 404 Not Found\r\n\r\n"
+};
 
 var bytesResponse = Encoding.ASCII.GetBytes(response);
 socket.Send(bytesResponse);
