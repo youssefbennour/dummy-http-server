@@ -14,10 +14,7 @@ while (true)
     await socket.ReceiveAsync(buffer);
 
     var request = Encoding.UTF8.GetString(buffer);
-    var requestPath = request.Split("\r\n")
-        .FirstOrDefault()?
-        .Split(" ").ElementAt(1);
-
+    var requestPath = GetRequestPath(request);
 
     string? response = String.Empty;
     if (requestPath is "/")
@@ -30,6 +27,9 @@ while (true)
     }else if (requestPath.StartsWith("/echo"))
     {
         response = ParameterExtractionResponse(requestPath);
+    }else if (requestPath.StartsWith("/files"))
+    {
+        response = FileResponse(request);
     }
     else
     {
@@ -52,12 +52,9 @@ string ParameterExtractionResponse(string? requestPath)
 
 string? HeaderExtractionResponse(string request)
 {
-    var headers = request[(request.IndexOf("\r\n", StringComparison.InvariantCultureIgnoreCase) + 1)..]
-        .Split("/r/n/r/n")
-        .FirstOrDefault();
-    
-    var userAgentHeader = headers?.Split("\r\n")
-    .FirstOrDefault(x => x.StartsWith("User-Agent"));
+
+    var headers = GetRequestHeaders(request); 
+    var userAgentHeader = headers.FirstOrDefault(x => x.StartsWith("User-Agent"));
 
     var userAgentValue = userAgentHeader?.Split(':')?
         .ElementAtOrDefault(1)?
@@ -65,4 +62,43 @@ string? HeaderExtractionResponse(string request)
 
     var userAgentValueLengthInBytes = Encoding.ASCII.GetByteCount(userAgentValue ?? string.Empty);
     return $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValueLengthInBytes}\r\n\r\n{userAgentValue}";
+}
+
+string? FileResponse(string request)
+{
+    string? fileName = GetRequestPath(request)?.Split("/")
+        .ElementAtOrDefault(1);
+    var filePath = $"{Environment.CurrentDirectory}/tmp/{fileName}";
+    if (!File.Exists(filePath))
+    {
+        return "HTTP/1.1 404 Not Found\r\n";
+    }
+
+    var text= File.ReadAllText(filePath);
+    var byteCount = Encoding.ASCII.GetByteCount(text);
+    return $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {byteCount}\r\n\r\n{text}";
+
+}
+
+List<string> GetRequestHeaders(string request)
+{
+     var headers = request[(request.IndexOf("\r\n", StringComparison.InvariantCultureIgnoreCase) + 1)..]
+             .Split("/r/n/r/n")
+             .FirstOrDefault();
+ 
+     return headers?.Split("\r\n")
+         .ToList() ?? [];   
+}
+
+string? GetRequestPath(string request)
+{
+    return request.Split("\r\n")
+        .FirstOrDefault()?
+        .Split(" ")
+        .ElementAt(1); 
+}
+
+public partial class Program
+{
+    
 }
