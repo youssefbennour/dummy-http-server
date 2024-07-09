@@ -71,7 +71,7 @@ string? FileResponse(string request)
     var filePath = $"{Environment.CurrentDirectory}/tmp/{fileName}";
     if (!File.Exists(filePath))
     {
-        return "HTTP/1.1 404 Not Found\r\n";
+        return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
 
     var text= File.ReadAllText(filePath);
