@@ -68,7 +68,7 @@ string? FileResponse(string request)
 {
     string? fileName = GetRequestPath(request)?.Split("/")
         .ElementAtOrDefault(1);
-    var filePath = $"{Environment.CurrentDirectory}/tmp/{fileName}";
+    var filePath = $"/tmp/{fileName}";
     if (!File.Exists(filePath))
     {
         return "HTTP/1.1 404 Not Found\r\n\r\n";
